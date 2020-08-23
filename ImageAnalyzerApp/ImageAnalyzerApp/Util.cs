@@ -11,18 +11,63 @@ using System.Threading.Tasks;
 
 namespace ImageAnalyzerApp
 {
-    public class ResultTypeInfo
+    public struct CropInfo
     {
-        public int index = 0;
-        public string typeName = string.Empty;
-        public Bitmap bitmap = null;
-    }
+        public enum Type
+        {
+            CropSingle,
+            CropMulti,
+            Max,
+        }
 
-    public struct AnalyzeResultInfo
-    {
-        public int index;
-        public string Name;
-        public ResultTypeInfo ResultType;
+        public enum Direction
+        {
+            Left,
+            Down,
+            Max,
+        }
+
+        public Type eType;
+        public Rect kSingleCrop;
+        public int nMultiCount;
+        public Direction eMultiDirection;
+
+        public void Copy(CropInfo source)
+        {
+            this.eType = source.eType;
+            this.kSingleCrop.Copy(source.kSingleCrop);
+            this.nMultiCount = source.nMultiCount;
+            this.eMultiDirection = source.eMultiDirection;
+        }
+
+        public List<Rect> GetRectList()
+        {
+            var retVal = new List<Rect>();
+            if (eType == Type.CropSingle)
+            {
+                retVal.Add(kSingleCrop);
+            }
+            else
+            {
+                int xDir = eMultiDirection == Direction.Left ? 1 : 0;
+                int yDir = eMultiDirection == Direction.Down ? 1 : 0;
+
+                for (int i = 0; i < nMultiCount; ++i)
+                {
+                    var rect = new Rect();
+                    rect.Copy(kSingleCrop);
+                    rect.XMin += xDir * i * (kSingleCrop.Width + 1);
+                    rect.YMin += yDir * i * (kSingleCrop.Height + 1);
+                    rect.XMax = rect.XMin + kSingleCrop.Width;
+                    rect.YMax = rect.YMin + kSingleCrop.Height;
+
+                    retVal.Add(rect);
+                }
+            }
+                
+            return retVal;
+        }
+
     }
 
     public struct Rect
