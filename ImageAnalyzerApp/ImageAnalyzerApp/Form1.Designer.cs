@@ -55,6 +55,7 @@
             this.label9 = new System.Windows.Forms.Label();
             this.textBoxState = new System.Windows.Forms.TextBox();
             this.buttonChangeMode = new System.Windows.Forms.Button();
+            this.backWorkerExec = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // button_Clear
@@ -295,6 +296,12 @@
             this.buttonChangeMode.UseVisualStyleBackColor = true;
             this.buttonChangeMode.Click += new System.EventHandler(this.buttonChangeMode_Click);
             // 
+            // backWorkerExec
+            // 
+            this.backWorkerExec.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backWorkerExec_DoWork);
+            this.backWorkerExec.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backWorkerExec_ProgressChanged);
+            this.backWorkerExec.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backWorkerExec_RunWorkerCompleted);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
@@ -361,6 +368,7 @@
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.TextBox textBoxState;
         private System.Windows.Forms.Button buttonChangeMode;
+        private System.ComponentModel.BackgroundWorker backWorkerExec;
     }
 }
 

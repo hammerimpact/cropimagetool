@@ -37,6 +37,9 @@ namespace ImageAnalyzerApp
             _instance = this;
 
             InitializeComponent();
+
+            backWorkerExec.WorkerReportsProgress = true;
+            backWorkerExec.WorkerSupportsCancellation = true;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -467,38 +470,84 @@ namespace ImageAnalyzerApp
             // Refresh Data 2
             Util.Log("===============ExecCropAll Start===============");
 
-            bool bFailed = false;
-            int nSuccess = 0;
+            backWorkerExec.RunWorkerAsync();
+        }
+
+
+        private void backWorkerExec_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var bw = sender as BackgroundWorker;
+
+            var kWorkResult = new WorkResult();
+            kWorkResult.eFailedReason = EnumFailedReason.None;
+            kWorkResult.Path = string.Empty;
+
             int nAll = listTargetFileInfos.Count;
             for (int i = 0; i < nAll; ++i)
             {
+                // Cancellation
+                if (bw != null && bw.CancellationPending)
+                {
+                    e.Cancel = true;
+                    break;
+                }
+
                 var reason = ExecCrop(i, listTargetFileInfos[i].Name, listTargetFileInfos[i].Path);
                 if (reason == EnumFailedReason.None)
-                    ++nSuccess;
+                {
+                    if (bw != null)
+                    {
+                        int progress = (int)((float)i / (float)nAll * 100f);
+                        if (i + 1 == nAll)
+                            progress = 100;
+
+                        bw.ReportProgress(progress);
+
+                        Thread.Sleep(10);
+                    }
+                }
                 else
                 {
-                    bFailed = true;
-                    Util.Log(string.Format("ExecCropAnalize Failed[{0}] : {1}", listTargetFileInfos[i].Name, reason));
+                    kWorkResult.eFailedReason = reason;
+                    kWorkResult.Path = listTargetFileInfos[i].Path;
                     break;
                 }
             }
+        }
 
-            if (bFailed == false)
+        private void backWorkerExec_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            Util.Log(string.Format("ExecCropAll Progress[{0}%]", e.ProgressPercentage));
+        }
+
+        private void backWorkerExec_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if ((e.Cancelled == true))
             {
-                Util.Log(string.Format("===============ExecCropAll Complete[{0}/{1}]===============", nSuccess, nAll));
+                Util.Log("===============ExecCropAll Canceled===============");
+                MessageBox.Show("ExecCropAll Canceled.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            else if (!(e.Error == null))
+            {
+                Util.Log(string.Format("===============ExecCropAndAnalizeAll Error Canceled({0})===============", e.Error.Message));
+                MessageBox.Show("ExecCropAll Error.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             else
             {
-                //// Refresh Data
-                //InitData_ResultTypeInfo();
-                //InitData_AnalyzeResultInfo();
+                if (e.Result != null && e.Result is WorkResult)
+                {
+                    var kWorkResult = e.Result as WorkResult;
+                    if (null != kWorkResult)
+                    {
+                        if (kWorkResult.eFailedReason == EnumFailedReason.None)
+                            Util.Log("===============ExecCropAndAnalizeAll Complete===============");
+                        else
+                            Util.Log(string.Format("===============ExecCropAndAnalizeAll Failed {0} {1}===============", kWorkResult.eFailedReason, kWorkResult.Path));
+                    }
+                }
+
+                MessageBox.Show("ExecCropAll Complete.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-
-            //// Refresh UI
-            //RefreshUI_ResultTypeInfo();
-            //RefreshUI_AnalyzeResultInfo();
-
-            //SaveResultType();
         }
 
         //private void SaveResultType()
@@ -517,6 +566,12 @@ namespace ImageAnalyzerApp
             BitmapLoadFailed,
             RectCropInvalid,
             BitmapCloneFailed,
+        }
+
+        private class WorkResult
+        {
+            public EnumFailedReason eFailedReason;
+            public string Path;
         }
 
         private EnumFailedReason ExecCrop(int index, string Name, string path)
