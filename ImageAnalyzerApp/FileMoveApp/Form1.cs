@@ -129,7 +129,7 @@ namespace FileMoveApp
             {
                 if (dicMoveTarget.ContainsKey(targetInfo.Name))
                 {
-                    File.Copy(targetInfo.Path, szDestDirectoryPath + "\\" + targetInfo.Name);
+                    File.Copy(targetInfo.Path, szDestDirectoryPath + "\\" + targetInfo.Name, true);
                     ++Count;
                 }
             }
