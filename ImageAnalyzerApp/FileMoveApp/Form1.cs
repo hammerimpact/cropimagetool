@@ -92,7 +92,7 @@ namespace FileMoveApp
                 return;
             }
 
-            var paths = Directory.GetFiles(szSourDirectoryPath, "*.jpg");
+            var paths = Directory.GetFiles(szSourDirectoryPath);
             if (null == paths)
             {
                 MessageBox.Show("Target File Empty.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
